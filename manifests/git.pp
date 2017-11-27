@@ -1,4 +1,3 @@
-
 define vcscheck::git ($path,$source=undef) {
     include vcscheck::git::base
     $MAILTO=hiera("mail_sysadmins","root@localhost")
@@ -6,7 +5,8 @@ define vcscheck::git ($path,$source=undef) {
 }
 
 class vcscheck::git::base {
+    include vcscheck::base
     package {"git":ensure=>present}
     file {"/etc/cron.daily/gitcheck.sh":source=>"puppet:///modules/vcscheck/gitcheck.sh"}
-    file {"/etc/vcscheck":ensure=>directory}
+    file {"/usr/local/bin/gitcheck.sh":source=>"puppet:///modules/vcscheck/gitcheck.sh"}
 }

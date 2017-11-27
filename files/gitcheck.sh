@@ -53,14 +53,17 @@ fi
 FAIL=0
 
 function check_git() {
-
     CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
     RL=${PIPESTATUS[0]}
     CHECK_PSTATUS=`git status -v | egrep 'pull|push|ahead'` 2>/dev/null
     #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
     RP=${PIPESTATUS[0]}
-    CHECK_FSTATUS=`git fetch --dry-run 2>&1`
-    RF=${PIPESTATUS[0]}
+    if [ "$GITINFO" ]; then
+        CHECK_FSTATUS=`git fetch --dry-run 2>&1`
+	RF=${PIPESTATUS[0]}
+    else
+	CHECK_FSTATUS=""
+    fi
     if [ "$CHECK_LSTATUS" == "" -a "$CHECK_PSTATUS" == "" -a "$CHECK_FSTATUS" == "" ]; then
         echo "## $CONF: $SVN_DIR git status OK, fetch OK, pull OK" >> $USERMAIL
     elif [[ "$CHECK_FSTATUS" =~ "Network connection" ]]; then
@@ -68,13 +71,28 @@ function check_git() {
         echo $GITINFO | sed -e 's/^/-- /' >> $USERMAIL
         FAIL=1
     else
-        echo -e "## $CONF: $SVN_DIR is not in sync (r=$R):" >> $USERMAIL
+        echo -e "## $CONF: $SVN_DIR is not in sync (r=$RL/$RP/$RF):" >> $USERMAIL
         echo "--## git status -v :" >> $USERMAIL
         git status -v 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
-        echo "--## git fetch dry-run :" >> $USERMAIL
-        git fetch --dry-run 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+	if [ "$GITINFO" ]; then
+            echo "--## git fetch dry-run :" >> $USERMAIL
+	    git fetch --dry-run 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+	else
+	    echo "--## local repo, no check on git fetch" >> $USERMAIL
+	fi
         echo "--## git show -s :" >> $USERMAIL
         git show -s 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+        FAIL=1
+    fi
+    if [ -f .gitmodules ]; then
+	CHECK_SSTATUS=`git submodule status --recursive| grep -v '(heads/master)$'`
+	RS=${PIPESTATUS[0]}
+    fi
+    if [ "$CHECK_SSTATUS" == "" ]; then
+	echo "## $CONF: $SVN_DIR git submodule OK" >> $USERMAIL
+    else
+        echo "## $CONF: $SVN_DIR git submodule status --recursive :" >> $USERMAIL
+	git submodule status --recursive 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
         FAIL=1
     fi
 }
@@ -114,7 +132,8 @@ for F in $CONFIGS; do
 
         if [ -d $SVN_DIR/.git ];  then
             #GITINFO=$(cd $SVN_DIR; git remote get-url origin) ## needs newer git
-            GITINFO=$(cd $SVN_DIR; git remote -v | grep fetch)
+            GITINFO=$(cd $SVN_DIR; git remote -v | grep origin | grep fetch | sed -e "s/origin\s*//" -e "s/\s*(.*)//" )
+	    #echo $GITINFO #debug
             [ -e $SVN_DIR/.git/svn ] && SVNINFO=$(cd $SVN_DIR; git svn info)
         else
             echo "## $CONF: $SVN_DIR is not a GIT working directory." >> $USERMAIL
@@ -125,7 +144,7 @@ for F in $CONFIGS; do
 
         if [ -n "$SOURCE" ];  then
             if [ "$GITINFO" != "$SOURCE" ]; then
-  				tmp=$(git remote get-url origin)
+  		#tmp=$(git remote get-url origin) ## needs newer git
                 echo "## $CONF: $SVN_DIR source '$GITINFO'">> $USERMAIL
                 echo "## $CONF: $SVN_DIR does not match '$SOURCE'." >> $USERMAIL
                 FAIL=1 # but do not skip update check anyway
