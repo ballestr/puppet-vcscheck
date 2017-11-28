@@ -1,4 +1,4 @@
-define vcscheck::git ($path,$source=undef) {
+define vcscheck::git ($path,$source=undef,$create=undef) {
     include vcscheck::git::base
     $MAILTO=hiera("mail_sysadmins","root@localhost")
     file {"/etc/vcscheck/git_${name}.rc": content=>"MAILTO=$MAILTO\nDIR=$path\nSOURCE=$source\n"}
