@@ -101,8 +101,8 @@ function check_git() {
 
 FAILS=0
 for F in $CONFIGS; do
+    MAILTO=""
     source $F || continue
-
     [ "$MAILTO" ] || MAILTO=$SYSADMINS
     CONF=$(basename $F)
     FAIL=0

@@ -40,15 +40,15 @@ fi
 
 if [ $# -eq 0 ]; then
     shopt -s nullglob
-    CONFIGS="/etc/svncheck/*"
+    CONFIGS="/etc/vcscheck/svn_*.rc"
 else
     CONFIGS="$@"
 fi
 
 FAILS=0
 for F in $CONFIGS; do
+    MAILTO=""
     source $F || continue
-
     [ "$MAILTO" ] || MAILTO=$SYSADMINS
     CONF=$(basename $F)
     FAIL=0
