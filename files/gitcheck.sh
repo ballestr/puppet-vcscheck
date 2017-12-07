@@ -55,8 +55,8 @@ FAIL=0
 function check_git() {
     CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
     RL=${PIPESTATUS[0]}
-    CHECK_PSTATUS=`git status -v | egrep 'pull|push|ahead'` 2>/dev/null
-    #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
+    CHECK_PSTATUS=`git status -v | egrep 'pull|push|ahead|detached'` 2>/dev/null
+    #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead|no branch'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
     RP=${PIPESTATUS[0]}
     if [ "$GITINFO" ]; then
         CHECK_FSTATUS=`git fetch --dry-run 2>&1`
@@ -71,7 +71,7 @@ function check_git() {
         echo $GITINFO | sed -e 's/^/-- /' >> $USERMAIL
         FAIL=1
     else
-        echo -e "## $CONF: $SVN_DIR is not in sync (r=$RL/$RP/$RF):" >> $USERMAIL
+        echo -e "## $CONF: $SVN_DIR is not in sync or detached (r=$RL/$RP/$RF):" >> $USERMAIL
         echo "--## git status -v :" >> $USERMAIL
         git status -v 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
 	if [ "$GITINFO" ]; then
