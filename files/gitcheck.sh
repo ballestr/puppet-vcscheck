@@ -85,13 +85,16 @@ function check_git() {
         FAIL=1
     fi
     if [ -f .gitmodules ]; then
-        CHECK_SSTATUS=`git submodule status --recursive| grep -v '(heads/master)$'`
+        CHECK_SSTATUS=`git submodule status --recursive| grep -v '^ '`
+        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|grep detached||true" | grep -B1 detached`
         RS=${PIPESTATUS[0]}
         if [ "$CHECK_SSTATUS" == "" ]; then
             echo "## $CONF: $SVN_DIR git submodule OK" >> $USERMAIL
         else
             echo "## $CONF: $SVN_DIR git submodule status --recursive :" >> $USERMAIL
             git submodule status --recursive 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+            echo "## $CONF: $SVN_DIR git submodule foreach --recursive git status :" >> $USERMAIL
+            git submodule foreach --recursive "git status" 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
             FAIL=1
         fi
     fi
