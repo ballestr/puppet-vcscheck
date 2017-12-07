@@ -85,15 +85,15 @@ function check_git() {
         FAIL=1
     fi
     if [ -f .gitmodules ]; then
-	CHECK_SSTATUS=`git submodule status --recursive| grep -v '(heads/master)$'`
-	RS=${PIPESTATUS[0]}
-    fi
-    if [ "$CHECK_SSTATUS" == "" ]; then
-	echo "## $CONF: $SVN_DIR git submodule OK" >> $USERMAIL
-    else
-        echo "## $CONF: $SVN_DIR git submodule status --recursive :" >> $USERMAIL
-	git submodule status --recursive 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
-        FAIL=1
+        CHECK_SSTATUS=`git submodule status --recursive| grep -v '(heads/master)$'`
+        RS=${PIPESTATUS[0]}
+        if [ "$CHECK_SSTATUS" == "" ]; then
+            echo "## $CONF: $SVN_DIR git submodule OK" >> $USERMAIL
+        else
+            echo "## $CONF: $SVN_DIR git submodule status --recursive :" >> $USERMAIL
+            git submodule status --recursive 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+            FAIL=1
+        fi
     fi
 }
 
@@ -132,8 +132,8 @@ for F in $CONFIGS; do
 
         if [ -d $SVN_DIR/.git ];  then
             #GITINFO=$(cd $SVN_DIR; git remote get-url origin) ## needs newer git
-            GITINFO=$(cd $SVN_DIR; git remote -v | grep origin | grep fetch | sed -e "s/origin\s*//" -e "s/\s*(.*)//" )
-	    #echo $GITINFO #debug
+            GITINFO=$(cd $SVN_DIR; git remote -v | grep origin | grep fetch | sed -e "s/origin\s*//" -e "s/\s*(.*)//" ) #" confused mcedit
+            #echo $GITINFO #debug
             [ -e $SVN_DIR/.git/svn ] && SVNINFO=$(cd $SVN_DIR; git svn info)
         else
             echo "## $CONF: $SVN_DIR is not a GIT working directory." >> $USERMAIL
@@ -144,7 +144,7 @@ for F in $CONFIGS; do
 
         if [ -n "$SOURCE" ];  then
             if [ "$GITINFO" != "$SOURCE" ]; then
-  		#tmp=$(git remote get-url origin) ## needs newer git
+                #tmp=$(git remote get-url origin) ## needs newer git
                 echo "## $CONF: $SVN_DIR source '$GITINFO'">> $USERMAIL
                 echo "## $CONF: $SVN_DIR does not match '$SOURCE'." >> $USERMAIL
                 FAIL=1 # but do not skip update check anyway
