@@ -28,7 +28,7 @@ MAIL_CMD="/usr/sbin/sendmail -t"
 USERMAIL=$(mktemp /tmp/svncheck.XXXXXXXXXX)   # mail text
 UPDATEMAIL=$(mktemp /tmp/svncheck.XXXXXXXXXX)   # mail text
 FROMROOT="<root@$(hostname -f)>"
-SYSADMINS="root@localhost"
+SYSADMINS="root" # not @localhost, ssmtp does not remap it nicely
 REPLYTO=$SYSADMINS
 #[ -s /etc/puppet/puppet.conf ] && PUPSRV=$(egrep "^[[:space:]]*server[[:space:]]*=" /etc/puppet/puppet.conf | sed -e "s/.*=\ *//")
 export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
