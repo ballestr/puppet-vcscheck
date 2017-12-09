@@ -1,0 +1,15 @@
+#!/bin/bash
+CONF=$1
+USERMAIL=$2
+
+## post check file to the puppet host
+
+[ -s /etc/puppet/puppet.conf ] && PUPSRV=$(egrep "^[[:space:]]*server[[:space:]]*=" /etc/puppet/puppet.conf | sed -e "s/.*=\ *//")
+
+if [ $2 = "OK" ]; then
+	T=$(mktemp /tmp/vcscheck.XXXXXXXX) ## Chris: Cant send /dev/null with curl in CC7 ?
+    [ "$PUPSRV" ] && curl -sS -F svncheck=@$T -Fconf=$CONF http://$PUPSRV/svncheck/submit.php > /dev/null
+    rm $T
+else
+	[ "$PUPSRV" ] && curl -sS -F svncheck=@$USERMAIL -Fconf=$CONF http://$PUPSRV/svncheck/submit.php > /dev/null
+fi

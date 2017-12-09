@@ -1,7 +1,6 @@
 define vcscheck::git ($path,$source=undef,$create=undef) {
     include vcscheck::git::base
-    $MAILTO=hiera("mail_sysadmins","root")
-    file {"/etc/vcscheck/git_${name}.rc": content=>"MAILTO=$MAILTO\nDIR=$path\nSOURCE=$source\n"}
+    vcscheck::cfg{ $name: type=>'git' }
 }
 
 class vcscheck::git::base {
@@ -12,4 +11,10 @@ class vcscheck::git::base {
     ## cleanup old versions
     file {"/etc/cron.daily/gitcheck.sh":ensure=>absent}
     file {"/usr/local/bin/gitcheck.sh":ensure=>absent}
+
+# nice cronjobs
+#27 00-08 * * * root nice /usr/local/sbin/svncheck
+#27    09 * * * root nice /usr/local/sbin/svncheck -update
+#27 10-23 * * * root nice /usr/local/sbin/svncheck
+
 }
