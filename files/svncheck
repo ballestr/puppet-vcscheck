@@ -112,7 +112,7 @@ for F in $CONFIGS; do
             continue
         fi
 
-        if !svn_checkdir;  then
+        if ! svn_checkdir;  then
             FAIL=1
             continue
         fi

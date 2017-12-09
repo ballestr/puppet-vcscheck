@@ -159,7 +159,7 @@ for F in $CONFIGS; do
             continue
         fi
 
-        if !git_checkdir ; then
+        if ! git_checkdir ; then
             FAIL=1
             continue
         fi

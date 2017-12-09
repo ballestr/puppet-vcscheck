@@ -1,6 +1,6 @@
 define vcscheck::svn ($path,$source=undef,$create=false,$autoupdate=false) {
     include vcscheck::svn::base
-    vcscheck::cfg{ $name: type=>'svn' }
+    vcscheck::cfg{ $name: type=>'svn',dir=>$path,source=>$source,create=>$create,autoupdate=>$autoupdate }
 }
 
 class vcscheck::svn::base {

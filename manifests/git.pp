@@ -1,6 +1,6 @@
-define vcscheck::git ($path,$source=undef,$create=undef) {
+define vcscheck::git ($path,$source=undef,$create=false,$autoupdate=false) {
     include vcscheck::git::base
-    vcscheck::cfg{ $name: type=>'git' }
+    vcscheck::cfg{ $name: type=>'git',dir=>$path,source=>$source,create=>$create,autoupdate=>$autoupdate }
 }
 
 class vcscheck::git::base {
