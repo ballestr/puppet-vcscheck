@@ -1,7 +1,11 @@
 class vcscheck::base {
-    file {"/etc/vcscheck":ensure=>directory}
     file {"/etc/cron.daily/vcsfind":source=>"puppet:///modules/vcscheck/vcsfind"}
     file {"/usr/local/bin/vcsnotify":source=>"puppet:///modules/vcscheck/vcsnotify"}
+    file {"/etc/vcscheck":ensure=>directory}
+    tidy {
+        "/etc/vcscheck":
+            age => 0, recurse => true, matches => "*", require => File["/etc/vcscheck"]
+    }
 }
 
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
