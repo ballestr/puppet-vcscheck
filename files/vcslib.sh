@@ -8,4 +8,5 @@ function gitsvn_checkdir() {
 
 function gitsvn_update() {
     # TODO: actually handle GIT checkouts (git svn rebase --dry-run not working as expected)
+    true
 }

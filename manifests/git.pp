@@ -6,8 +6,8 @@ define vcscheck::git ($path,$source=undef,$create=false,$autoupdate=false) {
 class vcscheck::git::base {
     include vcscheck::base
     package {"git":ensure=>present}
-    file {"/etc/cron.hourly/gitcheck":source=>"puppet:///modules/vcscheck/gitcheck.sh"}
-    file {"/usr/local/bin/gitcheck":source=>"puppet:///modules/vcscheck/gitcheck.sh"}
+    file {"/etc/cron.hourly/gitcheck":source=>"puppet:///modules/vcscheck/gitcheck"}
+    file {"/usr/local/bin/gitcheck":source=>"puppet:///modules/vcscheck/gitcheck"}
     ## cleanup old versions
     file {"/etc/cron.daily/gitcheck.sh":ensure=>absent}
     file {"/usr/local/bin/gitcheck.sh":ensure=>absent}

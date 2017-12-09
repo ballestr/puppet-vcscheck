@@ -21,8 +21,9 @@
 # Update: 2.0 version for Git
 # sergio.ballestrero 2017-05
 
-#MY_NAME=`readlink -f  "$0"` # -f fails on OsX
-MY_NAME=`readlink "$0"`
+# MYNAME=`readlink -f  "$0"` # -f fails on OsX
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #"#confusedmcedit
+MYNAME="$MYDIR/$(basename ${BASH_SOURCE[0]})"
 SPREAD=10
 MAIL_CMD="/usr/sbin/sendmail -t"
 USERMAIL=$(mktemp /tmp/vcscheck.XXXXXXXXXX)   # mail text
@@ -48,6 +49,11 @@ if [ $# -eq 0 ]; then
 else
     CONFIGS="$@"
 fi
+
+echo "$MYNAME"
+
+#source $MYDIR/vcslib.sh || exit 1
+source /usr/local/bin/vcslib.sh || exit 1
 
 function git_checkstatus() {
     CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
@@ -211,11 +217,13 @@ if [ -s $UPDATEMAIL ] ; then
 {
     cat $UPDATEMAIL 
     echo "---"
-    echo "Mail sent by $MY_NAME $CONFIGS running on $(hostname)"
+    echo "Mail sent by $MYNAME $CONFIGS running on $(hostname)"
 }| mail -s "[VCSCHECK] updates on $(hostname -s)"  $MAILTO
 fi
 
 rm $USERMAIL $UPDATEMAIL
+
+set
 
 ## exit code, especially for puppet
 [ $FAILS -ne 0 ] && exit 1
