@@ -1,7 +1,25 @@
 #!/bin/bash
 ## Managed by Puppet ##
 # Function library for vcscheck
-# https://github.com/ballestr/puppet-vcscheck
+# From https://github.com/ballestr/puppet-vcscheck
+
+## push status to a central collector
+function vcsnotify() {
+    local CONF=$1
+    local USERMAIL=$2
+    local VCSSRV
+
+    ## post check file to the puppet host
+    [ -s /etc/puppet/puppet.conf ] && VCSSRV=$(egrep "^[[:space:]]*server[[:space:]]*=" /etc/puppet/puppet.conf | sed -e "s/.*=\ *//")
+
+    if [ "$2" = "OK" ]; then
+        T=$(mktemp /tmp/vcscheck.XXXXXXXX) ## Chris: Cant send /dev/null with curl in CC7 ?
+        [ "$VCSSRV" ] && curl -sS -F svncheck=@$T -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
+        rm $T
+    else
+        [ "$VCSSRV" ] && curl -sS -F svncheck=@$USERMAIL -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
+    fi
+}
 
 function vcs_checkstatus() {
     #echo vcs_checkstatus $TYPE

@@ -5,26 +5,10 @@ define vcscheck::git ($path,$source=undef,$create=false,$autoupdate=false) {
 
 class vcscheck::git::base {
     include vcscheck::base
-    $script="/usr/local/bin/gitcheck"
     package {"git":ensure=>present}
-    #file {"/etc/cron.hourly/gitcheck":source=>"puppet:///modules/vcscheck/gitcheck"}
-    file {$script:source=>"puppet:///modules/vcscheck/gitcheck"}
 
     ## cleanup old versions
     file {["/etc/cron.daily/gitcheck.sh","/etc/cron.hourly/gitcheck"]:ensure=>absent}
-    file {["/usr/local/bin/gitcheck.sh"]:ensure=>absent}
+    file {["/usr/local/bin/gitcheck.sh","/usr/local/bin/gitcheck"]:ensure=>absent}
 
-    $MAILTO=hiera("mail_sysadmins","root")
-    $r=13+fqdn_rand(15)
-    crond::job {
-        "gitcheck_all":
-        mail=>$MAILTO,
-        comment=>"run gitcheck on all",
-        jobs=>[
-            #"$r 00-08 * * * root nice $script",
-            "$r    09 * * * root nice $script -update",
-            "$r 10-20 * * * root nice $script"
-        ],
-        require=>File[$script];
-    }
 }

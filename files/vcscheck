@@ -2,9 +2,9 @@
 #####################
 # Managed by Puppet #
 #####################
-# gitcheck
-# https://github.com/ballestr/puppet-vcscheck
-# Usage: Check the status of VCS directory
+# vcscheck
+# From https://github.com/ballestr/puppet-vcscheck
+# Check the status of Version Control System directory
 #
 # Author: saqib.haleem
 # Version: 1.0  18.8.2010
@@ -22,6 +22,8 @@
 # sergio.ballestrero 2015-01-24
 # Update: 2.0 version for Git
 # sergio.ballestrero 2017-05
+# Update: 2.1 version merged to support both SVN and Git
+# sergio.ballestrero 2017-12
 
 #[[ -t 0 || -n "$SSH_CONNECTION" ]] || set ## debug for cron
 
@@ -35,7 +37,7 @@ UPDATEMAIL=$(mktemp /tmp/vcscheck.XXXXXXXXXX)   # mail text
 FROMROOT="<root@$(hostname -f)>"
 SYSADMINS="root" # not @localhost, ssmtp does not remap it nicely
 REPLYTO=$SYSADMINS
-#export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
+export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
 
 if [ "$1" = "-update" ]; then
    DO_UPDATE=true
@@ -48,10 +50,9 @@ if [ "$1" = "-create" ]; then
    shift
 fi
 
-TYPE="git"
 if [ $# -eq 0 ]; then
     shopt -s nullglob
-    CONFIGS="/etc/vcscheck/${TYPE}_*.rc"
+    CONFIGS="/etc/vcscheck/*.rc"
 else
     CONFIGS="$@"
 fi
@@ -60,9 +61,11 @@ source $MYDIR/vcslib.sh || source /usr/local/bin/vcslib.sh || exit 1
 
 FAILS=0
 for F in $CONFIGS; do
+    TYPE=""
     MAILTO=""
     source $F || continue
     [ "$MAILTO" ] || MAILTO=$SYSADMINS
+    [ "$TYPE" ] || TYPE=git #default to git
     CONF=$(basename $F)
     FAIL=0
 
