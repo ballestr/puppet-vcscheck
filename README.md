@@ -1,8 +1,8 @@
 # puppet-vcscheck
-Version Control System checks
+Version Control System directory status checks
 
-Check if a Git clone or Subversion checkout are in good status, sending notifications
-Create or update if desired.
+Check if a Git clone or Subversion checkout are in consistent and updated status, sending notifications.
+Create or pull/update if desired.
 
 Note that the "official" module vcsrepo (https://forge.puppet.com/puppetlabs/vcsrepo) 
 is only intended for puppet 
@@ -13,11 +13,11 @@ vcscheck::svn{"sysadm":
   path=>"/root/sysadm",
   autoupdate=>true,
   create=>true,
-  source=>"file:///data/svn/sysadm"
+  source=>"svn+ssh://somewhere.net/data/svn/sysadm"
 }
 vcscheck::git{"puppet":
   path=>"/etc/puppet",
-  source=>"/data/git/sysadm_puppet_home.git"
+  source=>"https://somewhere.net/data/git/sysadm_puppet_home.git"
 }
 ```
 
@@ -30,17 +30,19 @@ In the future, the vcscheck scripts will also support being used as Nagios/Icing
 
 
 ## Manual usage
-The module deploys `/usr/local/bin/svncheck` or `/usr/local/bin/gitcheck` which can also be used manually.
+The module deploys `/usr/local/bin/vcscheck`,  which can also be used manually.
 ```
-gitcheck [-update] [-create] [configfile]
+vcscheck [--update] [--create] [--nagios] [configfile]
 ```
 If no configfile is specified, all those present in `/etc/vcscheck` will be used.
 
 Also `/usr/local/bin/vcsfind` is available, funcionality is minimal.
 
+Note: for manual use for git, you may want to check also https://github.com/badele/gitcheck
+
 ## To Do
-[ ] Merge GIT and SVN in a single `vcscheck` script
+[x] Merge GIT and SVN in a single `vcscheck` script
 [ ] Support `git svn` repo clones
-[ ] Support Nagios checks
+[x] Support Nagios checks
 [ ] Extend `vcsfind` 
 [ ] Consolidated reporting
