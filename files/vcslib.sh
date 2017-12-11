@@ -6,7 +6,7 @@
 ## push status to a central collector
 function vcsnotify() {
     local CONF=$1
-    local USERMAIL=$2
+    local MSGFILE=$2
     local VCSSRV
 
     ## post check file to the puppet host
@@ -17,7 +17,7 @@ function vcsnotify() {
         [ "$VCSSRV" ] && curl -sS -F svncheck=@$T -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
         rm $T
     else
-        [ "$VCSSRV" ] && curl -sS -F svncheck=@$USERMAIL -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
+        [ "$VCSSRV" ] && curl -sS -F svncheck=@$MSGFILE -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
     fi
 }
 
@@ -70,33 +70,39 @@ function vcs_getsrc() {
 function git_checkstatus() {
     local CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
     local RL=${PIPESTATUS[0]}
-    local CHECK_PSTATUS=`git status -v | egrep 'pull|push|ahead|detached'` 2>/dev/null
+    local CHECK_PSTATUS=`git status | egrep 'pull|push|ahead|detached'` 2>/dev/null
     #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead|no branch'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
     local RP=${PIPESTATUS[0]}
-    if [ "$VCSSRC" ]; then
+    if [ "$VCSSRC" -a "$DO_REMOTE" ]; then
         local CHECK_FSTATUS=`git fetch --dry-run 2>&1`
         local RF=${PIPESTATUS[0]}
     else
         local CHECK_FSTATUS=""
     fi
     if [ "$CHECK_LSTATUS" == "" -a "$CHECK_PSTATUS" == "" -a "$CHECK_FSTATUS" == "" ]; then
-        echo "## $CONF: $VCS_DIR git status OK, fetch OK, pull OK" >> $USERMAIL
+        echo "## $CONF: $VCS_DIR git status OK, fetch OK, pull OK"
     elif [[ "$CHECK_FSTATUS" =~ "Network connection" ]]; then
-        echo -e "## $CONF: network connection failure (s=$CHECK_STATUS):" >> $USERMAIL
-        echo $VCSSRC | sed -e 's/^/-- /' >> $USERMAIL
+        echo -e "## $CONF: network connection failure (s=$CHECK_STATUS):"
+        echo $VCSSRC | sed -e 's/^/-- /'
         FAIL=1
     else
-        echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP/$RF):" >> $USERMAIL
-        echo "--## git status -v :" >> $USERMAIL
-        git status -v 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
-        if [ "$VCSSRC" ]; then
-            echo "--## git fetch dry-run :" >> $USERMAIL
-            git fetch --dry-run 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
-        else
-            echo "--## local repo, no check on git fetch" >> $USERMAIL
+        echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP/$RF):"
+        echo "--## git status :"
+        git status 2>&1 | sed -e 's/^/-- /'
+	if [ "$DO_REMOTE" ]; then
+            if [ "$VCSSRC" ]; then
+                echo "--## git fetch --dry-run :"
+                git fetch --dry-run 2>&1 | sed -e 's/^/-- /'
+            else
+                echo "--## local repo, no check on git fetch"
+            fi
         fi
-        echo "--## git show -s :" >> $USERMAIL
-        git show -s 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+        if git status | egrep -q 'Your branch is ahead' ; then
+            ## Git 2.5+ (Q2 2015), the actual answer would be git log @{push} 
+            echo "--## last commits (git show -10 --since='2 weeks' -s --oneline --decorate) :"
+            git show -10 --since='2 weeks' -s --format='* %h [%ar]%d %an: %s' | sed -e 's/^/-- /'
+            #git show -10 -s --oneline --decorate 2>&1 | sed -e 's/^/-- /'
+        fi
         FAIL=1
     fi
     if [ -f .gitmodules ]; then
@@ -105,12 +111,12 @@ function git_checkstatus() {
         CHECK_SSTATUS+=`git submodule foreach --recursive "git status|grep detached||true" | grep -B1 detached`
         RS=${PIPESTATUS[0]}
         if [ "$CHECK_SSTATUS" == "" ]; then
-            echo "## $CONF: $VCS_DIR git submodule OK" >> $USERMAIL
+            echo "## $CONF: $VCS_DIR git submodule OK"
         else
-            echo "## $CONF: $VCS_DIR git submodule status --recursive :" >> $USERMAIL
-            git submodule status --recursive 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
-            echo "## $CONF: $VCS_DIR git submodule foreach --recursive git status :" >> $USERMAIL
-            git submodule foreach --recursive "git status" 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+            echo "## $CONF: $VCS_DIR git submodule status --recursive :"
+            git submodule status --recursive 2>&1 | sed -e 's/^/-- /'
+            echo "## $CONF: $VCS_DIR git submodule foreach --recursive git status :"
+            git submodule foreach --recursive "git status" 2>&1 | sed -e 's/^/-- /'
             FAIL=1
         fi
     fi
@@ -139,11 +145,11 @@ function git_isvcsdir() {
 }
 function git_checkdir() {
     if [ ! -e $VCS_DIR/.git ];  then
-        echo "## $CONF: $VCS_DIR is not a GIT working directory." >> $USERMAIL
+        echo "## $CONF: $VCS_DIR is not a GIT working directory."
         return 1
     fi
     if [ -e $VCS_DIR/.git/svn ]; then
-        echo "## $CONF: $VCS_DIR is a GIT SVN working directory, not pure GIT." >> $USERMAIL
+        echo "## $CONF: $VCS_DIR is a GIT SVN working directory, not pure GIT."
         return 1
     fi
     return 0
@@ -156,17 +162,23 @@ function git_getsrc() {
 #########################################
 
 function svn_checkstatus() {
-    CHECK_STATUS=`svn status -u 2>&1 | sed -e '/^Status/ d'` 2>/dev/null
-    R=${PIPESTATUS[0]}
+    local CHECK_STATUS
+    if [ -n "$DO_REMOTE" ]; then
+        CHECK_STATUS=`svn status -u 2>&1 | sed -e '/^Status/ d'` 2>/dev/null
+        R=${PIPESTATUS[0]}
+    else
+        CHECK_STATUS=`svn status 2>&1 | sed -e '/^Status/ d'` 2>/dev/null
+        R=${PIPESTATUS[0]}
+    fi
     if [ "$CHECK_STATUS" == "" ]; then
-        echo "## $CONF: $VCS_DIR status -u ok" >> $USERMAIL
+        echo "## $CONF: $VCS_DIR status -u OK"
     elif [[ "$CHECK_STATUS" =~ "Network connection" ]]; then
-        echo -e "## $CONF: network connection failure (s=$CHECK_STATUS):" >> $USERMAIL
-        svn info | grep "^Repository Root:" | sed -e 's/^/-- /' >> $USERMAIL
+        echo -e "## $CONF: network connection failure (s=$CHECK_STATUS):"
+        svn info | grep "^Repository Root:" | sed -e 's/^/-- /'
         FAIL=1
     else
-        echo -e "## $CONF: $VCS_DIR is not in sync (r=$R):" >> $USERMAIL
-        svn status -u 2>&1 | sed -e 's/^/-- /' >> $USERMAIL
+        echo -e "## $CONF: $VCS_DIR is not in sync (r=$R):"
+        svn status -u 2>&1 | sed -e 's/^/-- /'
         FAIL=1
     fi
 }
@@ -188,7 +200,7 @@ function svn_isvcsdir() {
 }
 function svn_checkdir() {
     if [ ! -d $VCS_DIR/.svn ];  then
-        echo "## $CONF: $VCS_DIR is not an SVN working directory." >> $USERMAIL
+        echo "## $CONF: $VCS_DIR is not an SVN working directory."
         return 1
     fi
 }
@@ -203,7 +215,7 @@ function svn_getsrc() {
 
 function gitsvn_checkdir() {
     if [ -e $VCS_DIR/.git/svn ];  then
-        echo "## $CONF: $VCS_DIR is a GIT SVN working directory" >> $USERMAIL
+        echo "## $CONF: $VCS_DIR is a GIT SVN working directory"
         VCSSRC=$(cd $VCS_DIR; git svn info)
     fi
 }
