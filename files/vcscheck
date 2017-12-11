@@ -24,6 +24,8 @@
 # sergio.ballestrero 2017-05
 # Update: 2.1 version merged to support both SVN and Git
 # sergio.ballestrero 2017-12
+# Update: 2.2 refactor for Nagios/Icinga2 usage
+# sergio.ballestrero 2017-12
 
 #[[ -t 0 || -n "$SSH_CONNECTION" ]] || set ## debug for cron
 
@@ -39,16 +41,32 @@ SYSADMINS="root" # not @localhost, ssmtp does not remap it nicely
 REPLYTO=$SYSADMINS
 export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
 
-if [ "$1" = "-update" ]; then
-   DO_UPDATE=true
-   shift
+## Set defaults
+DO_REMOTE=true
+if [[ -t 0 || -n "$SSH_CONNECTION" ]]; then
+    DO_QUIET=""
+    DO_MAIL=""
+else
+    DO_MAIL=true
+    DO_QUIET=true
 fi
 
-if [ "$1" = "-create" ]; then
-   DO_CREATE=true
-   DO_EXITCODE=true
-   shift
-fi
+## process options
+CMDLINE="$@"
+while [[ "$1" =~ ^- ]]; do
+    case "$1" in
+    -update)  DO_UPDATE=true;;
+    --update) DO_UPDATE=true;;
+    -create)  DO_CREATE=true;DO_EXITCODE=true;;
+    --create) DO_CREATE=true;DO_EXITCODE=true;;
+    --local)  DO_REMOTE=;; ## disable remote checks
+    --exitcode) DO_EXITCODE=true;;
+    --nagios) DO_EXITCODE=true;DO_REMOTE=;DO_MAIL=;DO_QUIET=;echo "## vcscheck nagios mode";;
+    esac
+    shift
+done
+[ -n "$DO_CREATE" ] && DO_UPDATE=true ## force update on create
+[ -n "$DO_UPDATE" ] && DO_REMOTE=true ## force remote check
 
 if [ $# -eq 0 ]; then
     shopt -s nullglob
@@ -59,78 +77,88 @@ fi
 
 source $MYDIR/vcslib.sh || source /usr/local/bin/vcslib.sh || exit 1
 
+function vcsprocessdir() {
+    local VCS_DIR=$1
+    if [ -z "$VCS_DIR" ] ;  then
+        echo "## $CONF: empty DIR='$VCS_DIR' (warning)."
+        WARN=1
+        return
+    fi
+
+    if ! vcs_isvcsdir; then
+        if [ -n "$DO_CREATE" -a -n "$SOURCE" ]; then
+            ## if not empty, move aside
+            [ "ls -A $VCS_DIR" ] && mv $VCS_DIR $VCS_DIR.pre_vcscheck
+            vcs_create
+        fi
+    fi
+
+    # must cd to the path, else git status fails, svn status fails if it is a link
+    if ! cd $VCS_DIR/ 2>/dev/null ;  then
+        if [ $(id -ru) -eq 0 ]; then
+            echo "## $CONF: $VCS_DIR is not accessible."
+            FAIL=1
+        else
+            echo "## $CONF: $VCS_DIR is not accessible (non-root warning)."
+            WARN=1
+        fi
+        return
+    fi
+    # echo "## $CONF: entering $VCS_DIR" ## debug
+
+    if ! vcs_checkdir; then
+        FAIL=1
+        return
+    fi
+
+    vcs_getsrc
+
+    if [ -n "$SOURCE" ];  then
+        if [ "$VCSSRC" != "$SOURCE" ]; then
+            echo "## $CONF: $VCS_DIR source '$VCSSRC'"
+            echo "## $CONF: $VCS_DIR does not match '$SOURCE'."
+            FAIL=1 # but do not skip status/update check anyway
+        fi
+    fi
+
+    # let's not hammer the server if running from batch...
+    [[ -t 0 || -p /dev/stdin || -n "$SSH_CONNECTION" ]] || sleep $[RANDOM%SPREAD]
+    if [ "$AUTOUPDATE" == "true" -a -n "$DO_UPDATE" ]; then
+        ## Check if running interactive, else send output to email
+        if [ -n "$DO_MAIL" ]; then 
+            vcs_update >> $UPDATEMAIL
+        else
+            vcs_update
+        fi
+    fi
+    vcs_checkstatus
+    #echo "## $CONF: processdir fail=$FAIL warns=$WARN" ## debug
+    [ $FAIL -ne 0 -o $WARN -ne 0 ] && echo "--" ## separator line
+}
+
 FAILS=0
+WARNS=0
 for F in $CONFIGS; do
     TYPE=""
     MAILTO=""
     source $F || continue
     [ "$MAILTO" ] || MAILTO=$SYSADMINS
     [ "$TYPE" ] || TYPE=git #default to git
-    CONF=$(basename $F)
+    CONF=$(basename $F .rc)
     FAIL=0
+    WARN=0
 
-    ## Actually one single dir, but helps flow control with continue
-    for VCS_DIR in $DIR; do
-
-        if [ -z "$VCS_DIR" ] ;  then
-            # quietly skip empty
-            continue
-        fi
-
-        if ! vcs_isvcsdir; then
-            if [ -n "$DO_CREATE" -a -n "$SOURCE" ]; then
-                ## if not empty, move aside
-                [ "ls -A $VCS_DIR" ] && mv $VCS_DIR $VCS_DIR.pre_vcscheck
-                vcs_create
-            fi
-        fi
-
-        # must cd to the path, else git status fails, svn status fails if it is a link
-        if ! cd $VCS_DIR/ 2>/dev/null ;  then
-            echo "## $CONF: $VCS_DIR is not accessible." >> $USERMAIL
-            FAIL=1
-            continue
-        fi
-
-        if ! vcs_checkdir; then
-            FAIL=1
-            continue
-        fi
-
-        vcs_getsrc
-
-        if [ -n "$SOURCE" ];  then
-            if [ "$VCSSRC" != "$SOURCE" ]; then
-                echo "## $CONF: $VCS_DIR source '$VCSSRC'">> $USERMAIL
-                echo "## $CONF: $VCS_DIR does not match '$SOURCE'." >> $USERMAIL
-                FAIL=1 # but do not skip status/update check anyway
-            fi
-        fi
-
-        # let's not hammer the server if running from batch...
-        [[ -t 0 || -p /dev/stdin || -n "$SSH_CONNECTION" ]] || sleep $[RANDOM%SPREAD]
-        if [ "$AUTOUPDATE" == "true" -a -n "$DO_UPDATE" ]; then
-            ## Check if running interactive, else send output to email
-            if [[ -t 0 || -n "$SSH_CONNECTION" ]]; then 
-                vcs_update
-            else
-                vcs_update >> $UPDATEMAIL
-            fi
-        fi
-        vcs_checkstatus
-    done
+    if [ "$DO_QUIET" ]; then
+        vcsprocessdir $DIR 2>&1 > $USERMAIL
+    else
+        vcsprocessdir $DIR 2>&1 > >(tee $USERMAIL) ## use process substitution to preserve global variables
+    fi
 
     ## Notifications
-    if [ $FAIL -ne 0 ]; then
+    if [ $FAIL -ne 0 -o $WARN -ne 0 ]; then
         vcsnotify $CONF $USERMAIL
-        if [[ -t 0 || -n "$SSH_CONNECTION" ]] ; then
-            cat $USERMAIL
-            echo ""
-        else
-            if [ -z "$PUPSRV" ]; then 
-                ## send mail if no report server defined
-                cat $USERMAIL | mail -s "[VCSCHECK] errors on $(hostname -s) $CONF" $MAILTO
-            fi
+        if [ "$DO_MAIL" ] ; then
+            cat $USERMAIL | mail -s "[VCSCHECK] errors on $(hostname -s) $CONF" $MAILTO
         fi
     else
         vcsnotify $CONF OK
@@ -138,18 +166,26 @@ for F in $CONFIGS; do
 
     cat /dev/null > $USERMAIL
     FAILS=$[FAILS+FAIL]
+    WARNS=$[WARNS+WARN]
 done
 
 if [ -s $UPDATEMAIL ] ; then
 {
     cat $UPDATEMAIL 
     echo "---"
-    echo "Mail sent by $MYNAME $CONFIGS running on $(hostname)"
+    echo "Mail sent by $MYNAME $CMDLINE running on $(hostname)"
 }| mail -s "[VCSCHECK] updates on $(hostname -s)"  $MAILTO
 fi
 
 rm $USERMAIL $UPDATEMAIL
 
-## exit code, especially for puppet -create
-[ -n "$DO_EXITCODE" -a $FAILS -ne 0 ] && exit 1
+if [ -z "$DO_QUIET" ]; then
+    echo "## $MYNAME '$CMDLINE' exit: fails=$FAILS warns=$WARNS"
+fi
+## exit code, for Nagios/Icinga2 and for --create from puppet
+if [ -n "$DO_EXITCODE" ]; then
+    [ $FAILS -ne 0 ] && exit 2
+    [ $WARNS -ne 0 ] && exit 1
+fi
 exit 0
+
