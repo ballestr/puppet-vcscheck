@@ -184,7 +184,7 @@ function svn_checkstatus() {
 }
 
 function svn_update() {
-    res=$(svn update | grep -v "At revision")
+    res=$(svn update | egrep -v "^Updating|^At revision ")
     if [ "$res" ]; then
         echo "## $CONF: updated $VCS_DIR from $VCSSRC"
         echo "$res"
