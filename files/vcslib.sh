@@ -1,5 +1,7 @@
 #!/bin/bash
 ## Managed by Puppet ##
+## puppetfile: modules/vcscheck/vcslib.sh
+#
 # Function library for vcscheck
 # From https://github.com/ballestr/puppet-vcscheck
 

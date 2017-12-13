@@ -1,6 +1,8 @@
 #!/bin/bash
 ## Managed by Puppet ##
-# look for Version Control System directories in common locations
+## puppetfile: modules/vcscheck/vcsfind
+#
+## look for Version Control System directories in common locations
 
 CFGDIR=/etc/vcscheck
 

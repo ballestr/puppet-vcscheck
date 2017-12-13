@@ -1,8 +1,9 @@
 #!/bin/bash
-#####################
-# Managed by Puppet #
-#####################
-# vcscheck
+#######################
+## Managed by Puppet ##
+#######################
+## puppetfile: modules/vcscheck/vcscheck
+#
 # From https://github.com/ballestr/puppet-vcscheck
 # Check the status of Version Control System directory
 #
