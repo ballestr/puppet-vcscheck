@@ -27,6 +27,8 @@
 # sergio.ballestrero 2017-12
 # Update: 2.2 refactor for Nagios/Icinga2 usage
 # sergio.ballestrero 2017-12
+# Update: 2.3 warn instead of fail, if recent files present
+# sergio.ballestrero 2017-12
 
 #[[ -t 0 || -n "$SSH_CONNECTION" ]] || set ## debug for cron
 
@@ -134,6 +136,17 @@ function vcsprocessdir() {
     fi
     vcs_checkstatus
     #echo "## $CONF: processdir fail=$FAIL warns=$WARN" ## debug
+
+    if [ $FAIL -ne 0 ]; then
+        local tmax=120
+        rf=$(find $VCS_DIR -name .git -prune -o -mmin -$tmax -type f)
+        if [ "$rf" ]; then
+            echo "## $CONF: recently modified files present (<${tmax}m), WARNING only:"
+            find $VCS_DIR -name .git -prune -o -mmin -$tmax -type f -ls | sed 's/^/--/'
+            WARN=$[WARN+$FAIL]
+            FAIL=0
+        fi
+    fi
     [ $FAIL -ne 0 -o $WARN -ne 0 ] && echo "--" ## separator line
 }
 
