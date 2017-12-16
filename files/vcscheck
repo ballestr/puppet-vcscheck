@@ -137,12 +137,13 @@ function vcsprocessdir() {
     vcs_checkstatus
     #echo "## $CONF: processdir fail=$FAIL warns=$WARN" ## debug
 
+    ## give some grace for recently modified files
     if [ $FAIL -ne 0 ]; then
         local tmax=120
-        rf=$(find $VCS_DIR -name .git -prune -o -mmin -$tmax -type f)
+        rf=$(find $VCS_DIR -name .git -prune -o -name .svn -o -mmin -$tmax -type f -print) ## do not forget the -print or -ls with prune
         if [ "$rf" ]; then
             echo "## $CONF: recently modified files present (<${tmax}m), WARNING only:"
-            find $VCS_DIR -name .git -prune -o -mmin -$tmax -type f -ls | sed 's/^/--/'
+            find $VCS_DIR -name .git -prune -o -name .svn -o -mmin -$tmax -type f -ls | sed 's/^/--/'
             WARN=$[WARN+$FAIL]
             FAIL=0
         fi

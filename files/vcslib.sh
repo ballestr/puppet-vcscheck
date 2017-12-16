@@ -107,10 +107,11 @@ function git_checkstatus() {
         fi
         FAIL=1
     fi
+    ## check submodules
     if [ -f .gitmodules ]; then
         local CHECK_SSTATUS
         CHECK_SSTATUS=`git submodule status --recursive| grep -v '^ '`
-        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|grep detached||true" | grep -B1 detached`
+        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|egrep 'detached|ahead'||true" | egrep -B1 'detached|ahead'`
         RS=${PIPESTATUS[0]}
         if [ "$CHECK_SSTATUS" == "" ]; then
             echo "## $CONF: $VCS_DIR git submodule OK"
