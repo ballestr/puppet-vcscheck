@@ -5,7 +5,7 @@ define vcscheck::svn ($path,$source=undef,$create=false,$autoupdate=false) {
 
 class vcscheck::svn::base {
     include vcscheck::base
-    package {"subversion":ensure=>present}
+    #package {"subversion":ensure=>present}
 
     file {"/etc/cron.hourly/svncheck":ensure=>absent}
     file {"/usr/local/bin/svncheck":ensure=>absent}

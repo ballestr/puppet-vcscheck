@@ -1,5 +1,5 @@
 class vcscheck::base {
-    file {"/etc/cron.daily/vcsfind":source=>"puppet:///modules/vcscheck/vcsfind"}
+    #file {"/etc/cron.daily/vcsfind":source=>"puppet:///modules/vcscheck/vcsfind"}
     file {"/usr/local/bin/vcslib.sh":source=>"puppet:///modules/vcscheck/vcslib.sh"}
     file {"/usr/local/bin/vcsnotify":ensure=>absent}
     file {"/etc/vcscheck":ensure=>directory}
