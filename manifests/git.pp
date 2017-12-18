@@ -5,7 +5,7 @@ define vcscheck::git ($path,$source=undef,$create=false,$autoupdate=false) {
 
 class vcscheck::git::base {
     include vcscheck::base
-    # package {"git":ensure=>present}
+    realize Package["git"]
 
     ## cleanup old versions
     file {["/etc/cron.daily/gitcheck.sh","/etc/cron.hourly/gitcheck"]:ensure=>absent}
