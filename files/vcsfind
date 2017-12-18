@@ -6,6 +6,7 @@
 
 CFGDIR=/etc/vcscheck
 
+## .git files are for submodules, which we handle at top level directly
 GITREPOS=$(find /etc /root /home /opt /usr/local /data_svn -xdev -name ".git" -type d)
 for gr in $GITREPOS ; do
     dir=$(dirname $gr)
