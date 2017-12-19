@@ -1,3 +1,4 @@
+## base installation of scripts and cronjob
 class vcscheck::base {
     file {"/usr/local/bin/vcslib.sh":source=>"puppet:///modules/vcscheck/vcslib.sh"}
     file {"/usr/local/bin/vcsnotify":ensure=>absent}
@@ -15,17 +16,18 @@ class vcscheck::base {
     $r=13+fqdn_rand(15)
     crond::job {
         "vcscheck_all":
-        mail=>$mailto,
-        comment=>"run vcscheck on all",
-        jobs=>[
+        mail    =>$mailto,
+        comment =>"run vcscheck on all",
+        jobs    =>[
             #"${r} 00-08 * * * root nice ${script}",
             "${r}    09 * * * root nice ${script} -update",
             "${r} 10-20 * * * root nice ${script}"
         ],
-        require=>File[$script];
+        require =>File[$script];
     }
 }
 
+## write the configuration file
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
     $mailto=hiera("mail_sysadmins","root")
     file {"/etc/vcscheck/${type}_${name}.rc":

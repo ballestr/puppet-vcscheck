@@ -72,7 +72,7 @@ function vcs_getsrc() {
 function git_checkstatus() {
     local CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
     local RL=${PIPESTATUS[0]}
-    local CHECK_PSTATUS=`git status | egrep 'pull|push|ahead|detached'` 2>/dev/null
+    local CHECK_PSTATUS=`git status | egrep 'pull|push|ahead|detached|any branch'` 2>/dev/null
     #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead|no branch'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
     local RP=${PIPESTATUS[0]}
     if [ "$VCSSRC" -a "$DO_REMOTE" ]; then
@@ -111,7 +111,7 @@ function git_checkstatus() {
     if [ -f .gitmodules ]; then
         local CHECK_SSTATUS
         CHECK_SSTATUS=`git submodule status --recursive| grep -v '^ '`
-        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|egrep 'detached|ahead'||true" | egrep -B1 'detached|ahead'`
+        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|egrep 'detached|ahead|any branch'||true" | egrep -B1 'detached|ahead'`
         RS=${PIPESTATUS[0]}
         if [ "$CHECK_SSTATUS" == "" ]; then
             echo "## $CONF: $VCS_DIR git submodule OK"
