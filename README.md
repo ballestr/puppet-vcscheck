@@ -41,8 +41,8 @@ Also `/usr/local/bin/vcsfind` is available, funcionality is minimal.
 Note: for manual use for git, you may want to check also https://github.com/badele/gitcheck
 
 ## To Do
-[x] Merge GIT and SVN in a single `vcscheck` script
-[ ] Support `git svn` repo clones
-[x] Support Nagios checks
-[ ] Extend `vcsfind` 
-[ ] Consolidated reporting
+- [x] Merge GIT and SVN in a single `vcscheck` script
+- [ ] Support `git svn` repo clones
+- [x] Support Nagios checks
+- [ ] Extend `vcsfind` 
+- [ ] Consolidated reporting
