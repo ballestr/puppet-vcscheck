@@ -1,3 +1,4 @@
+## base installation of scripts and cronjob
 class vcscheck::base {
     file {"/usr/local/bin/vcslib.sh":source=>"puppet:///modules/vcscheck/vcslib.sh"}
     file {"/usr/local/bin/vcsnotify":ensure=>absent}
@@ -11,25 +12,26 @@ class vcscheck::base {
     file {$script:source=>"puppet:///modules/vcscheck/vcscheck"}
 
     ## deploy cronjob
-    $MAILTO=hiera("mail_sysadmins","root")
+    $mailto=hiera("mail_sysadmins","root")
     $r=13+fqdn_rand(15)
     crond::job {
         "vcscheck_all":
-        mail=>$MAILTO,
-        comment=>"run vcscheck on all",
-        jobs=>[
-            #"$r 00-08 * * * root nice $script",
-            "$r    09 * * * root nice $script -update",
-            "$r 10-20 * * * root nice $script"
+        mail    =>$mailto,
+        comment =>"run vcscheck on all",
+        jobs    =>[
+            #"${r} 00-08 * * * root nice ${script}",
+            "${r}    09 * * * root nice ${script} -update",
+            "${r} 10-20 * * * root nice ${script}"
         ],
-        require=>File[$script];
+        require =>File[$script];
     }
 }
 
+## write the configuration file
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
-    $MAILTO=hiera("mail_sysadmins","root")
-    file {"/etc/vcscheck/${type}_${name}.rc": 
-    content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=$MAILTO\nTYPE=$type\nDIR=$dir\nSOURCE=$source\nCREATE=$create\nAUTOUPDATE=$autoupdate\n"}
+    $mailto=hiera("mail_sysadmins","root")
+    file {"/etc/vcscheck/${type}_${name}.rc":
+    content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
 }
 
 ## a daily cronjob to search and report on VCS directories 
