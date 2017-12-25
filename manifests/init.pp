@@ -12,7 +12,7 @@ class vcscheck::base {
     file {$script:source=>"puppet:///modules/vcscheck/vcscheck"}
 
     ## deploy cronjob
-    $mailto=hiera("mail_sysadmins","root")
+    $mailto=hiera("vcscheck/mailto","root")
     $r=13+fqdn_rand(15)
     crond::job {
         "vcscheck_all":
@@ -29,7 +29,7 @@ class vcscheck::base {
 
 ## write the configuration file
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
-    $mailto=hiera("mail_sysadmins","root")
+    $mailto=hiera("vcscheck/mailto","root")
     file {"/etc/vcscheck/${type}_${name}.rc":
     content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
 }
