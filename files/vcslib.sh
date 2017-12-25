@@ -91,7 +91,9 @@ function git_checkstatus() {
         echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP/$RF):"
         echo "--## git status :"
         git status 2>&1 | sed -e 's/^/-- /'
-	if [ "$DO_REMOTE" ]; then
+        echo "--## git stash list :"
+        git stash list 2>&1 | sed -e 's/^/-- /'
+        if [ "$DO_REMOTE" ]; then
             if [ "$VCSSRC" ]; then
                 echo "--## git fetch --dry-run :"
                 git fetch --dry-run 2>&1 | sed -e 's/^/-- /'
