@@ -43,10 +43,14 @@ Also `/usr/local/bin/vcsfind` is available, funcionality is minimal.
 Note: for manual use for git, you may want to check also https://github.com/badele/gitcheck
 
 ## To Do
+- [ ] fix updates
+- [ ] resurrect reporting API
 - [x] Merge GIT and SVN in a single `vcscheck` script
 - [x] config files also in `$HOME/.config/vcscheck/*.rc`
 - [x] check directory without config, like `vcscheck .` or `vcscheck *` (Git only)
 - [x] Detailed config check on git svn
+- [ ] check for correct git branch or tag
+- [ ] check for non-current, non-pushed branches (avoid forgetting/losing local work)
 - [ ] Support `git svn` repo clones
 - [x] Support Nagios checks
 - [ ] Extend `vcsfind` 
