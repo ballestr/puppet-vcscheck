@@ -32,9 +32,11 @@ In the future, the vcscheck scripts will also support being used as Nagios/Icing
 ## Manual usage
 The module deploys `/usr/local/bin/vcscheck`,  which can also be used manually.
 ```
-vcscheck [--update] [--create] [--nagios] [configfile]
+vcscheck [--update] [--create] [--nagios] [configfiles|directories]
 ```
-If no configfile is specified, all those present in `/etc/vcscheck` will be used.
+If no configfile is specified, all those present in `/etc/vcscheck/*.rc` and `$HOME/.config/vcscheck/*.rc` will be used.
+
+If a directory is specified, no config file will be read (will not search for a correspnding config).
 
 Also `/usr/local/bin/vcsfind` is available, funcionality is minimal.
 
@@ -42,6 +44,9 @@ Note: for manual use for git, you may want to check also https://github.com/bade
 
 ## To Do
 - [x] Merge GIT and SVN in a single `vcscheck` script
+- [x] config files also in `$HOME/.config/vcscheck/*.rc`
+- [x] check directory without config, like `vcscheck .` or `vcscheck *` (Git only)
+- [x] Detailed config check on git svn
 - [ ] Support `git svn` repo clones
 - [x] Support Nagios checks
 - [ ] Extend `vcsfind` 

@@ -74,6 +74,7 @@ done
 if [ $# -eq 0 ]; then
     shopt -s nullglob
     CONFIGS="/etc/vcscheck/*.rc"
+    CONFIGS+=" $HOME/.config/vcscheck/*.rc"
 else
     CONFIGS="$@"
 fi
@@ -143,7 +144,8 @@ function vcsprocessdir() {
         rf=$(find $VCS_DIR -name .git -prune -o -name .svn -prune -o -mmin -$tmax -type f -print) ## do not forget the -print or -ls with prune
         if [ "$rf" ]; then
             echo "## $CONF: recently modified files present (<${tmax}m), WARNING only:"
-            find $VCS_DIR -name .git -prune -o -name .svn -prune -o -mmin -$tmax -type f -ls | sed 's/^/--/'
+            find . -name .git -prune -o -name .svn -prune -o -mmin -$tmax -type f -print |\
+            xargs ls -lat | head -n10| sed 's/^/--/'
             WARN=$[WARN+$FAIL]
             FAIL=0
         fi
@@ -153,13 +155,21 @@ function vcsprocessdir() {
 
 FAILS=0
 WARNS=0
+PWD0=$PWD
 for F in $CONFIGS; do
+    cd $PWD0 || exit 1
     TYPE=""
     MAILTO=""
-    source $F || continue
+    if [ -d $F ]; then
+        echo "## entering directory $F"
+        CONF=$(basename $F)
+        DIR=$(cd $F && pwd)
+    else
+        source $F || continue
+        CONF=$(basename $F .rc)
+    fi
     [ "$MAILTO" ] || MAILTO=$SYSADMINS
     [ "$TYPE" ] || TYPE=git #default to git
-    CONF=$(basename $F .rc)
     FAIL=0
     WARN=0
 

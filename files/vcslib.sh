@@ -90,7 +90,7 @@ function git_checkstatus() {
     else
         echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP/$RF):"
         echo "--## git status :"
-        git status 2>&1 | sed -e 's/^/-- /'
+        git status 2>&1 | egrep -v "^$|\(use " | sed -e 's/^/-- /'
         echo "--## git stash list :"
         git stash list 2>&1 | sed -e 's/^/-- /'
         if [ "$DO_REMOTE" ]; then
@@ -121,7 +121,8 @@ function git_checkstatus() {
             echo "## $CONF: $VCS_DIR git submodule status --recursive :"
             git submodule status --recursive 2>&1 | sed -e 's/^/-- /'
             echo "## $CONF: $VCS_DIR git submodule foreach --recursive git status :"
-            git submodule foreach --recursive "git status" 2>&1 | sed -e 's/^/-- /'
+            git submodule foreach --recursive "git status" 2>&1 | \
+                egrep -v "^$|\(use |working tree clean|branch is up-to-date|On branch master" | sed -e 's/^/-- /'
             FAIL=1
         fi
     fi
@@ -150,18 +151,20 @@ function git_isvcsdir() {
 }
 function git_checkdir() {
     if [ ! -e $VCS_DIR/.git ];  then
-        echo "## $CONF: $VCS_DIR is not a GIT working directory."
+        echo "## $CONF: ERROR: $VCS_DIR is not a GIT working directory."
         return 1
     fi
     if [ -e $VCS_DIR/.git/svn ]; then
-        echo "## $CONF: $VCS_DIR is a GIT SVN working directory, not pure GIT."
+        echo "## $CONF: ERROR: $VCS_DIR is a GIT SVN working directory, not pure GIT."
+        git config -l | egrep '^remote|^svn' | sed 's/^/  /'
         return 1
     fi
     return 0
 }
 function git_getsrc() {
     #VCSSRC=$(cd $VCS_DIR; git remote get-url origin) ## needs newer git
-    VCSSRC=$(cd $VCS_DIR; git remote -v | grep origin | grep fetch | sed -e "s/origin\s*//" -e "s/\s*(.*)//" ) #" confused mcedit
+    #VCSSRC=$(cd $VCS_DIR; git remote -v | grep origin | grep fetch | sed -e "s/origin\s*//" -e "s/\s*(.*)//" ) #" confused mcedit
+    VCSSRC=$(cd $VCS_DIR && git config remote.origin.url)
 }
 
 #########################################
