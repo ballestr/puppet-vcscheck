@@ -69,26 +69,43 @@ function vcs_getsrc() {
 
 ##################################################
 
-function git_checkstatus() {
-    local CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
-    local RL=${PIPESTATUS[0]}
-    local CHECK_PSTATUS=`git status | egrep 'pull|push|ahead|detached|any branch'` 2>/dev/null
-    #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead|no branch'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
-    local RP=${PIPESTATUS[0]}
+function git_prefetch() {
     if [ "$VCSSRC" -a "$DO_REMOTE" ]; then
-        local CHECK_FSTATUS=`git fetch --dry-run 2>&1`
+        ## let's try to do a plain, safe fetch, no --all nor --prune
+        local CHECK_FSTATUS=`git fetch 2>&1`
         local RF=${PIPESTATUS[0]}
     else
         local CHECK_FSTATUS=""
     fi
-    if [ "$CHECK_LSTATUS" == "" -a "$CHECK_PSTATUS" == "" -a "$CHECK_FSTATUS" == "" ]; then
-        echo "## $CONF: $VCS_DIR git status OK, fetch OK, pull OK"
-    elif [[ "$CHECK_FSTATUS" =~ "Network connection" ]]; then
-        echo -e "## $CONF: network connection failure (s=$CHECK_STATUS):"
+    if [[ "$CHECK_FSTATUS" =~ "Network connection" ]]; then
+        echo -e "## $CONF: network connection failure (s=$CHECK_FSTATUS):"
         echo $VCSSRC | sed -e 's/^/-- /'
         FAIL=1
+    fi
+}
+
+function git_checkstatus() {
+    git_prefetch
+
+    local CHECK_LSTATUS=`git status --porcelain` 2>/dev/null
+    local RL=${PIPESTATUS[0]}
+    local CHECK_PSTATUS=`git status | egrep 'pull|push|ahead|detached|diverged|any branch'` 2>/dev/null
+    #CHECK_PSTATUS=`git status --porcelain -b | egrep 'pull|push|ahead|no branch'` 2>/dev/null ## not yet supperted in SLC6 git 1.7.1
+    local RP=${PIPESTATUS[0]}
+    if [ "$CHECK_LSTATUS" == "" -a "$CHECK_PSTATUS" == "" ]; then
+        echo "## $CONF: $VCS_DIR git local clean/OK, sync OK"
+    elif [ "$CHECK_LSTATUS" == "" ]; then
+        echo "## $CONF: $VCS_DIR git local clean/OK, out of sync"
+        LOCAL=0
+        REMOTE=1
+        FAIL=1
     else
-        echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP/$RF):"
+        echo -e "## $CONF: $VCS_DIR is not in sync or detached (r=$RL/$RP):"
+        LOCAL=1
+        REMOTE=1
+        FAIL=1
+    fi
+    if [ $FAIL -ne 0 ]; then
         echo "--## git status :"
         git status 2>&1 | egrep -v "^$|\(use " | sed -e 's/^/-- /'
         echo "--## git stash list :"
@@ -101,10 +118,10 @@ function git_checkstatus() {
                 echo "--## local repo, no check on git fetch"
             fi
         fi
-        if git status | egrep -q 'Your branch is ahead' ; then
+        if git status | egrep -q 'Your branch is ahead|Your branch and' ; then
             ## Git 2.5+ (Q2 2015), the actual answer would be git log @{push} 
             echo "--## last commits (git show -10 --since='2 weeks' -s --oneline --decorate) :"
-            git show -10 --since='2 weeks' -s --format='* %h [%ar]%d %an: %s' | sed -e 's/^/-- /'
+            git show -10 --since='2 weeks' -s --format='* %h [%ar]%d %ae: %s' | sed -e 's/^/-- /'
             #git show -10 -s --oneline --decorate 2>&1 | sed -e 's/^/-- /'
         fi
         FAIL=1
@@ -129,20 +146,19 @@ function git_checkstatus() {
 }
 
 function git_update() {
-    local CHECK_LSTATUS=`git status --porcelain`
-    if [ "$CHECK_LSTATUS" == "" ]; then
-        local res=$(git fetch | grep -v "At revision")
-        if [ "$res" ]; then
-            echo "## $CONF: updated $VCS_DIR"
-            echo "$res"
-        fi
-    else
-        echo "## $CONF: unclean $VCS_DIR, skip update"
-        echo "$res"
+    ## do not try to check status ourselves, let git take care
+    ## conservatively use fast-forward-only, to avoid merge conflicts
+    local out=$(git pull --ff-only 2>&1 )
+    R=${PIPESTATUS[0]}
+    #echo "$out"
+    if [ $R -ne 0 -o "$out" != "Already up-to-date." ]; then
+        echo "## $CONF: updated $VCS_DIR res=$R"
+        echo "$out"
     fi
 }
 
 function git_create() {
+    ## ToDo: should we clone shallow or not?
     echo "## $CONF: git clone --depth=1 $SOURCE $VCS_DIR"
     git clone --depth=1 $SOURCE $VCS_DIR
 }
