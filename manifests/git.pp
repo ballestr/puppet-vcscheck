@@ -1,4 +1,5 @@
-define vcscheck::git ($path,$source=undef,$create=false,$autoupdate=false) {
+## set autoupdate=false to disable
+define vcscheck::git ($path,$source=undef,$create=true,$autoupdate=true) {
     include vcscheck::git::base
     vcscheck::cfg{ $name: type=>'git',dir=>$path,source=>$source,create=>$create,autoupdate=>$autoupdate }
 }

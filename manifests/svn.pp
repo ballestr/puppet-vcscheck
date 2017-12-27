@@ -1,4 +1,5 @@
-define vcscheck::svn ($path,$source=undef,$create=false,$autoupdate=false) {
+## set autoupdate=false to disable
+define vcscheck::svn ($path,$source=undef,$create=true,$autoupdate=true) {
     include vcscheck::svn::base
     vcscheck::cfg{ $name: type=>'svn',dir=>$path,source=>$source,create=>$create,autoupdate=>$autoupdate }
 }

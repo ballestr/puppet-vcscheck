@@ -20,8 +20,8 @@ class vcscheck::base {
         comment =>"run vcscheck on all",
         jobs    =>[
             #"${r} 00-08 * * * root nice ${script}",
-            "${r}    09 * * * root nice ${script} -update",
-            "${r} 10-20 * * * root nice ${script}"
+            #"${r}    09 * * * root nice ${script} --update",
+            "${r} 09-20 * * * root nice ${script} --update"
         ],
         require =>File[$script];
     }
