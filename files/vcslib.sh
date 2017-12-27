@@ -146,14 +146,32 @@ function git_checkstatus() {
 }
 
 function git_update() {
+    ## DEBUG
+    if [ -f .gitmodules ]; then
+        echo "## $CONF: git submodule status --recursive (pre-pull) in $VCS_DIR"
+        git submodule status --recursive | grep -v "^ "
+        substatus=$(git submodule status --recursive | grep -v "^ ")
+    fi
+
     ## do not try to check status ourselves, let git take care
     ## conservatively use fast-forward-only, to avoid merge conflicts
-    local out=$(git pull --ff-only 2>&1 )
-    R=${PIPESTATUS[0]}
-    #echo "$out"
-    if [ $R -ne 0 -o "$out" != "Already up-to-date." ]; then
-        echo "## $CONF: updated $VCS_DIR res=$R"
-        echo "$out"
+    if [ "$(git remote)" ]; then
+        local out=$(git pull --ff-only 2>&1 )
+        R=${PIPESTATUS[0]}
+        #echo "$out"
+        if [ $R -ne 0 -o "$out" != "Already up-to-date." ]; then
+            echo "## $CONF: updated $VCS_DIR res=$R"
+            echo "$out"
+        fi
+    else
+        echo "## $CONF: NOTICE no remote, skipping update"
+    fi
+    ## ToDo: test with submodules
+    ## worried about merges with local...
+    ## update --checkout creates detached heads :-(
+    if [ -f .gitmodules ]; then
+        echo "## $CONF: git submodule update --recursive in $VCS_DIR"
+        git submodule update --recursive
     fi
 }
 
@@ -161,6 +179,13 @@ function git_create() {
     ## ToDo: should we clone shallow or not?
     echo "## $CONF: git clone --depth=1 $SOURCE $VCS_DIR"
     git clone --depth=1 $SOURCE $VCS_DIR
+    if [ -f .gitmodules ]; then
+        echo "## $CONF: git submodule init/update in $VCS_DIR"
+        ## ToDo: we may need a loop for nested submodules
+        git submodule init # no --recursive available here
+        git submodule foreach --recursive git submodule init
+        git submodule update --recursive
+    fi
 }
 function git_isvcsdir() {
     [ -e "$VCS_DIR" -a -e "$VCS_DIR/.git" ]
