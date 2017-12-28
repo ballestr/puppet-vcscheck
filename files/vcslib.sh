@@ -146,11 +146,12 @@ function git_checkstatus() {
 }
 
 function git_update() {
-    ## DEBUG
     if [ -f .gitmodules ]; then
-        echo "## $CONF: git submodule status --recursive (pre-pull) in $VCS_DIR"
-        git submodule status --recursive | grep -v "^ "
         substatus=$(git submodule status --recursive | grep -v "^ ")
+        if [ "$substatus" ]; then
+            echo "## $CONF: git submodule status --recursive (pre-pull) in $VCS_DIR"
+            echo "$substatus"
+        fi
     fi
 
     ## do not try to check status ourselves, let git take care
@@ -170,8 +171,11 @@ function git_update() {
     ## worried about merges with local...
     ## update --checkout creates detached heads :-(
     if [ -f .gitmodules ]; then
-        echo "## $CONF: git submodule update --recursive in $VCS_DIR"
-        git submodule update --recursive
+        subupdate=$(git submodule update --recursive)
+        if [ "$subupdate" ]; then
+            echo "## $CONF: git submodule update --recursive in $VCS_DIR"
+            echo "$subupdate"
+        fi
     fi
 }
 
