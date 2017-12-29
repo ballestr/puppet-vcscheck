@@ -9,19 +9,26 @@
 function vcsnotify() {
     local CONF=$1
     local MSGFILE=$2
-    local VCSSRV
 
     ## post check file to the puppet host
-    [ -s /etc/puppet/puppet.conf ] && VCSSRV=$(egrep "^[[:space:]]*server[[:space:]]*=" /etc/puppet/puppet.conf | sed -e "s/.*=\ *//")
+    #[ -s /etc/puppet/puppet.conf ] && VCSSRV=$(egrep "^[[:space:]]*server[[:space:]]*=" /etc/puppet/puppet.conf | sed -e "s/.*=\ *//")
+    #local URL="http://$VCSSRV/gather/vcscheck/submit.php"
+    [ "$NOTIFYURL" ] || { return 1; }
 
     if [ "$2" = "OK" ]; then
-        T=$(mktemp /tmp/vcscheck.XXXXXXXX) ## Chris: Cant send /dev/null with curl in CC7 ?
-        [ "$VCSSRV" ] && curl -sS -F svncheck=@$T -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
+        local T=$(mktemp /var/tmp/vcscheck.XXXXXXXX) ## Chris: Cant send /dev/null with curl in CC7 ? # sash: /dev/null ok on Debian curl 7.38.0 
+        curl -sS -F vcscheck=@$T -Fconf=$CONF $NOTIFYURL > /dev/null
+        local R=$?
         rm $T
     else
-        [ "$VCSSRV" ] && curl -sS -F svncheck=@$MSGFILE -Fconf=$CONF http://$VCSSRV/svncheck/submit.php > /dev/null
+        curl -sS -F vcscheck=@$MSGFILE -Fconf=$CONF $NOTIFYURL > /dev/null
+        local R=$?
     fi
+    #echo ".. vcsnotify $CONF $MSGFILE R=$R [$NOTIFYURL]" #DEBUG
+    return $R
 }
+
+
 
 function vcs_checkstatus() {
     #echo vcs_checkstatus $TYPE

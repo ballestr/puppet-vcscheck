@@ -30,8 +30,9 @@ class vcscheck::base {
 ## write the configuration file
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
     $mailto=hiera("vcscheck/mailto","root")
+    $notify_url=hiera("vcscheck/notify_url","")
     file {"/etc/vcscheck/${type}_${name}.rc":
-    content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
+    content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
 }
 
 ## a daily cronjob to search and report on VCS directories 
