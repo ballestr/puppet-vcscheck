@@ -22,7 +22,7 @@ vcscheck::git{"puppet":
 ```
 
 ## Notifications and reporting
-Notifications are sent by e-mail - `hiera("mail_sysadmins","root")` .
+Notifications are sent by e-mail - `hiera("vcscheck/mailto","root")` .
 
 Consolidated reporting had been implemented for ATLAS TDAQ (Online farm), will be resurrected here too.
 
@@ -43,8 +43,8 @@ Also `/usr/local/bin/vcsfind` is available, funcionality is minimal.
 Note: for manual use for git, you may want to check also https://github.com/badele/gitcheck
 
 ## To Do
-- [ ] fix updates
-- [ ] resurrect reporting API
+- [x] fix updates for Git
+- [x] resurrect reporting API
 - [x] Merge GIT and SVN in a single `vcscheck` script
 - [x] config files also in `$HOME/.config/vcscheck/*.rc`
 - [x] check directory without config, like `vcscheck .` or `vcscheck *` (Git only)
