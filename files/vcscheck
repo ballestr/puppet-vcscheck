@@ -49,9 +49,11 @@ DO_REMOTE=true
 if [[ -t 0 || -n "$SSH_CONNECTION" ]]; then
     DO_QUIET=""
     DO_MAIL=""
+    DO_PRODUCTION= ## assume this is a developer host
 else
     DO_MAIL=true
     DO_QUIET=true
+    DO_PRODUCTION=true ## assume this is a production deployment
 fi
 
 ## process options
@@ -67,12 +69,13 @@ while [[ "$1" =~ ^- ]]; do
     --nagios) DO_NAGIOS=true;;
     --icinga) DO_NAGIOS=true;; # icinga support ;-) 
     --quiet) DO_QUIET=true;;
+    --production) DO_PRODUCTION=true;; ## do not check git submodules for detached head
     esac
     shift
 done
 [ -n "$DO_CREATE" ] && DO_UPDATE=true ## force update on create
 [ -n "$DO_UPDATE" ] && DO_REMOTE=true ## force remote check on update
-[ -n "$DO_NAGIOS" ] && { DO_EXITCODE=true;DO_REMOTE=;DO_UPDATE=;DO_MAIL=;DO_QUIET=;echo "## vcscheck servicecheck mode"; }
+[ -n "$DO_NAGIOS" ] && { DO_EXITCODE=true;DO_REMOTE=;DO_UPDATE=;DO_MAIL=;DO_QUIET=;DO_PRODUCTION=true;echo "## vcscheck servicecheck mode"; }
 
 if [ $# -eq 0 ]; then
     shopt -s nullglob
