@@ -179,7 +179,7 @@ for F in $CONFIGS; do
         AUTOUPDATE="true"
     else
         ## protect against sourcing random files, e.g. when using vcscheck *
-        if ! head -n1 $F | grep -q "vcscheck" ; then
+        if ! head -n2 $F | grep -q "vcscheck::cfg" ; then
             echo "## $F is not a vcscheck config, skipping"
             continue
         fi
