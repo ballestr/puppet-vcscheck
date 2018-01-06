@@ -60,16 +60,19 @@ while [[ "$1" =~ ^- ]]; do
     case "$1" in
     -update)  DO_UPDATE=true;;
     --update) DO_UPDATE=true;;
-    -create)  DO_CREATE=true;DO_EXITCODE=true;;
-    --create) DO_CREATE=true;DO_EXITCODE=true;;
+    -create)  DO_CREATE=true;DO_EXITCODE=true;; ## exitcode for puppet
+    --create) DO_CREATE=true;DO_EXITCODE=true;; ## exitcode for puppet
     --local)  DO_REMOTE=;; ## disable remote checks
     --exitcode) DO_EXITCODE=true;;
-    --nagios) DO_EXITCODE=true;DO_REMOTE=;DO_MAIL=;DO_QUIET=;echo "## vcscheck nagios mode";;
+    --nagios) DO_NAGIOS=true;;
+    --icinga) DO_NAGIOS=true;; # icinga support ;-) 
+    --quiet) DO_QUIET=true;;
     esac
     shift
 done
 [ -n "$DO_CREATE" ] && DO_UPDATE=true ## force update on create
-[ -n "$DO_UPDATE" ] && DO_REMOTE=true ## force remote check
+[ -n "$DO_UPDATE" ] && DO_REMOTE=true ## force remote check on update
+[ -n "$DO_NAGIOS" ] && { DO_EXITCODE=true;DO_REMOTE=;DO_UPDATE=;DO_MAIL=;DO_QUIET=;echo "## vcscheck servicecheck mode"; }
 
 if [ $# -eq 0 ]; then
     shopt -s nullglob
@@ -167,9 +170,10 @@ for F in $CONFIGS; do
     CREATE=""
     AUTOUPDATE=""
     if [ -d $F ]; then
-        echo "## entering directory $F"
+        [ "$DO_QUIET" ] || echo "## entering directory $F"
         CONF=$(basename $F)
         DIR=$(cd $F && pwd)
+        AUTOUPDATE="true"
     else
         source $F || continue
         CONF=$(basename $F .rc)
