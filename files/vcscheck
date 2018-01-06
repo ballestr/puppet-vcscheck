@@ -159,8 +159,13 @@ WARNS=0
 PWD0=$PWD
 for F in $CONFIGS; do
     cd $PWD0 || exit 1
+    ## clear settings
     TYPE=""
+    DIR=""
     MAILTO=""
+    SOURCE=""
+    CREATE=""
+    AUTOUPDATE=""
     if [ -d $F ]; then
         echo "## entering directory $F"
         CONF=$(basename $F)
