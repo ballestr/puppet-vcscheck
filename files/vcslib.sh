@@ -135,9 +135,14 @@ function git_checkstatus() {
     fi
     ## check submodules
     if [ -f .gitmodules ]; then
-        local CHECK_SSTATUS
+        local CHECK_SSTATUS RS
+        ## ToDo: do we really want to check for detached HEAD? 
+        ##  not in production deployment most probably
+        ##  but in devel it's good to know it...
+        #local MATCH="detached|ahead|any branch" 
+        local MATCH="ahead|any branch"        
         CHECK_SSTATUS=`git submodule status --recursive| grep -v '^ '`
-        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|egrep 'detached|ahead|any branch'||true" | egrep -B1 'detached|ahead'`
+        CHECK_SSTATUS+=`git submodule foreach --recursive "git status|egrep '$MATCH'||true" | egrep -B1 '$MATCH'`
         RS=${PIPESTATUS[0]}
         if [ "$CHECK_SSTATUS" == "" ]; then
             echo "## $CONF: $VCS_DIR git submodule OK"
