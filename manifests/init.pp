@@ -38,9 +38,9 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
 
 ## a daily cronjob to search and report on VCS directories 
 ## which are not declared & managed by vcscheck
-class vcscheck::find {
+class vcscheck::find($period="weekly") {
     include vcscheck::base
-    file {"/etc/cron.daily/vcsfind":source=>"puppet:///modules/vcscheck/vcsfind"}
+    file {"/etc/cron.${period}/vcsfind":source=>"puppet:///modules/vcscheck/vcsfind"}
 }
 
 
