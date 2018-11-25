@@ -34,6 +34,15 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
     $notify_secret=hiera("vcscheck/notify_secret","")
     file {"/etc/vcscheck/${type}_${name}.rc":
     content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
+    if $create==true {
+        ## use the vcscheck script to checkout
+        exec {
+            "vcscheck_${name}_create":
+                command =>"/usr/local/bin/vcscheck -create ${cfgfile}",
+                unless  => "/usr/bin/test -d $dir/.$type",
+                require =>File["/etc/vcscheck/${type}_${name}.rc"];
+        }
+    }
 }
 
 ## a daily cronjob to search and report on VCS directories 
