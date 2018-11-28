@@ -1,15 +1,15 @@
 ## base installation of scripts and cronjob
 class vcscheck::base {
-    file {"/usr/local/bin/vcslib.sh":source=>"puppet:///modules/vcscheck/vcslib.sh"}
-    file {"/usr/local/bin/vcsnotify":ensure=>absent}
-    file {"/etc/vcscheck":ensure=>directory}
+    file {'/usr/local/bin/vcslib.sh':source=>'puppet:///modules/vcscheck/vcslib.sh'}
+    file {'/usr/local/bin/vcsnotify':ensure=>absent}
+    file {'/etc/vcscheck':ensure=>directory}
     tidy {
-        "/etc/vcscheck":
-            age => 0, recurse => true, matches => "*", require => File["/etc/vcscheck"]
+        '/etc/vcscheck':
+            age => 0, recurse => true, matches => "*", require => File['/etc/vcscheck']
     }
 
-    $script="/usr/local/bin/vcscheck"
-    file {$script:source=>"puppet:///modules/vcscheck/vcscheck"}
+    $script='/usr/local/bin/vcscheck'
+    file {$script:source=>'puppet:///modules/vcscheck/vcscheck'}
 
     ## deploy cronjob
     $mailto=hiera("vcscheck/mailto","root")
@@ -29,9 +29,9 @@ class vcscheck::base {
 
 ## write the configuration file
 define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
-    $mailto=hiera("vcscheck/mailto","root")
-    $notify_url=hiera("vcscheck/notify_url","")
-    $notify_secret=hiera("vcscheck/notify_secret","")
+    $mailto=hiera('vcscheck/mailto','root')
+    $notify_url=hiera('vcscheck/notify_url',"")
+    $notify_secret=hiera('vcscheck/notify_secret',"")
     file {"/etc/vcscheck/${type}_${name}.rc":
     content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
     if $create==true {
@@ -56,6 +56,6 @@ class vcscheck::find($period="weekly") {
 ## define (virtual) packages
 ## include it if you do not have them defined elsewhere
 class vcscheck::package {
-    @package {"subversion":ensure=>present}
-    @package {"git":ensure=>present}
+    @package {'subversion':ensure=>present}
+    @package {'git':ensure=>present}
 }
