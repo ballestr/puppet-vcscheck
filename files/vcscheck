@@ -43,6 +43,7 @@ FROMROOT="<root@$(hostname -f)>"
 SYSADMINS="root" # not @localhost, ssmtp does not remap it nicely
 REPLYTO=$SYSADMINS
 export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
+export GIT_SSH="$MYDIR/vcsssh"
 
 ## Set defaults
 DO_REMOTE=true
@@ -55,11 +56,34 @@ else
     DO_QUIET=true
     DO_PRODUCTION=true ## assume this is a production deployment
 fi
+shopt -s nullglob
+CONFIGS="/etc/vcscheck/*.rc"
+CONFIGS+=" $HOME/.config/vcscheck/*.rc"
+
+function print_help() {
+cat << EOF
+Usage: $0 <options> [config]
+  config is the name of a config file in $CONFIGS
+  options are the following:
+    --help)       print this help
+    --update)     update / pull
+    --create:     create checkout/clone if missing
+    --local:      skip remote checks
+    --exitcode:   return a non-zero value on warning and errors
+    --icinga:     skip remote checks, return exit code
+    --nagios:     skip remote checks, return exit code
+    --quiet:      quiet (no output)
+    --production: do not check git submodules for detached head
+EOF
+exit 0
+}
 
 ## process options
 CMDLINE="$@"
 while [[ "$1" =~ ^- ]]; do
     case "$1" in
+    -h)       print_help;;
+    --help)   print_help;;
     -update)  DO_UPDATE=true;;
     --update) DO_UPDATE=true;;
     -create)  DO_CREATE=true;DO_EXITCODE=true;; ## exitcode for puppet
@@ -68,8 +92,10 @@ while [[ "$1" =~ ^- ]]; do
     --exitcode) DO_EXITCODE=true;;
     --nagios) DO_NAGIOS=true;;
     --icinga) DO_NAGIOS=true;; # icinga support ;-) 
-    --quiet) DO_QUIET=true;;
+    --quiet)  DO_QUIET=true;;
     --production) DO_PRODUCTION=true;; ## do not check git submodules for detached head
+    --*)      print_help;;
+    -*)       print_help;;
     esac
     shift
 done
@@ -77,11 +103,7 @@ done
 [ -n "$DO_UPDATE" ] && DO_REMOTE=true ## force remote check on update
 [ -n "$DO_NAGIOS" ] && { DO_EXITCODE=true;DO_REMOTE=;DO_UPDATE=;DO_MAIL=;DO_QUIET=;DO_PRODUCTION=true;echo "## vcscheck servicecheck mode"; }
 
-if [ $# -eq 0 ]; then
-    shopt -s nullglob
-    CONFIGS="/etc/vcscheck/*.rc"
-    CONFIGS+=" $HOME/.config/vcscheck/*.rc"
-else
+if [ $# -ne 0 ]; then
     CONFIGS="$@"
 fi
 

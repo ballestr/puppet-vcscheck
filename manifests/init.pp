@@ -1,15 +1,17 @@
 ## base installation of scripts and cronjob
 class vcscheck::base {
-    file {'/usr/local/bin/vcslib.sh':source=>'puppet:///modules/vcscheck/vcslib.sh'}
-    file {'/usr/local/bin/vcsnotify':ensure=>absent}
+    $bindir='/usr/local/bin/'
+    file {"$bindir/vcslib.sh":source=>'puppet:///modules/vcscheck/vcslib.sh'}
+    file {"$bindir/vcsnotify":ensure=>absent}
     file {'/etc/vcscheck':ensure=>directory}
     tidy {
         '/etc/vcscheck':
             age => '0', recurse => true, matches => "*", require => File['/etc/vcscheck']
     }
 
-    $script='/usr/local/bin/vcscheck'
+    $script="$bindir/vcscheck"
     file {$script:source=>'puppet:///modules/vcscheck/vcscheck',mode=>'0755',owner=>root,group=>root}
+    file {"$bindir/vcsssh":source=>'puppet:///modules/vcscheck/vcsssh',mode=>'0755',owner=>root,group=>root}
 
     ## deploy cronjob
     $mailto=hiera("vcscheck/mailto","root")

@@ -1,0 +1,4 @@
+#!/bin/sh
+## Puppet Managed
+## batch-mode SSH for git
+exec ssh -o BatchMode=yes -o ConnectTimeout=2 -q $@
