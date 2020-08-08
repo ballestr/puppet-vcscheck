@@ -5,11 +5,11 @@ class vcscheck::base {
     file {'/etc/vcscheck':ensure=>directory}
     tidy {
         '/etc/vcscheck':
-            recurse => true, matches => "*", require => File['/etc/vcscheck']
+            age=0, recurse => true, matches => "*", require => File['/etc/vcscheck']
     }
 
     $script='/usr/local/bin/vcscheck'
-    file {$script:source=>'puppet:///modules/vcscheck/vcscheck'}
+    file {$script:source=>'puppet:///modules/vcscheck/vcscheck',mode=>'0755',owner=>root,group=>root}
 
     ## deploy cronjob
     $mailto=hiera("vcscheck/mailto","root")
