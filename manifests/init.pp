@@ -42,7 +42,7 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
         ## use the vcscheck script to checkout
         exec {
             "vcscheck_${name}_create":
-                command =>"/usr/local/bin/vcscheck -create ${cfgfile}",
+                command =>"/usr/local/bin/vcscheck --create --nomail ${cfgfile}",
                 unless  => "/usr/bin/test -d $dir/.$type",
                 require =>File["/etc/vcscheck/${type}_${name}.rc"];
         }
