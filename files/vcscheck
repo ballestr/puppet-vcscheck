@@ -73,6 +73,7 @@ Usage: $0 <options> [config]
     --icinga:     skip remote checks, return exit code
     --nagios:     skip remote checks, return exit code
     --quiet:      quiet (no output)
+    --nomail:     do not send email
     --production: do not check git submodules for detached head
 EOF
 exit 0
@@ -93,6 +94,7 @@ while [[ "$1" =~ ^- ]]; do
     --nagios) DO_NAGIOS=true;;
     --icinga) DO_NAGIOS=true;; # icinga support ;-) 
     --quiet)  DO_QUIET=true;;
+    --nomail) DO_MAIL=;;
     --production) DO_PRODUCTION=true;; ## do not check git submodules for detached head
     --*)      print_help;;
     -*)       print_help;;
