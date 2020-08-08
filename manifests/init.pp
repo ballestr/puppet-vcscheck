@@ -5,7 +5,7 @@ class vcscheck::base {
     file {'/etc/vcscheck':ensure=>directory}
     tidy {
         '/etc/vcscheck':
-            age=0, recurse => true, matches => "*", require => File['/etc/vcscheck']
+            age => 0, recurse => true, matches => "*", require => File['/etc/vcscheck']
     }
 
     $script='/usr/local/bin/vcscheck'
