@@ -17,11 +17,11 @@ function vcsnotify() {
 
     if [ "$2" = "OK" ]; then
         local T=$(mktemp /var/tmp/vcscheck.XXXXXXXX) ## Chris: Cant send /dev/null with curl in CC7 ? # sash: /dev/null ok on Debian curl 7.38.0 
-        curl -sS -F vcscheck=@$T -Fconf=$CONF -Fsecret=$NOTIFYSECRET $NOTIFYURL > /dev/null
+        curl -sS $CURLOPT -F vcscheck=@$T -Fconf=$CONF -Fsecret=$NOTIFYSECRET $NOTIFYURL > /dev/null
         local R=$?
         rm $T
     else
-        curl -sS -F vcscheck=@$MSGFILE -Fconf=$CONF -Fsecret=$NOTIFYSECRET $NOTIFYURL > /dev/null
+        curl -sS $CURLOPT -F vcscheck=@$MSGFILE -Fconf=$CONF -Fsecret=$NOTIFYSECRET $NOTIFYURL > /dev/null
         local R=$?
     fi
     #echo ".. vcsnotify $CONF $MSGFILE R=$R [$NOTIFYURL]" #DEBUG

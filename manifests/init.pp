@@ -34,8 +34,10 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
     $mailto=hiera('vcscheck/mailto','root')
     $notify_url=hiera('vcscheck/notify_url',"")
     $notify_secret=hiera('vcscheck/notify_secret',"")
+    $curlopt=hiera('vcscheck/curlopt','')
     file {"/etc/vcscheck/${type}_${name}.rc":
-    content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\n"}
+        content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\nCURLOPT=${curlopt}\n"
+    }
     if $create==true {
         ## use the vcscheck script to checkout
         exec {
