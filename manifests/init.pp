@@ -35,8 +35,10 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
     $notify_url=hiera('vcscheck/notify_url',"")
     $notify_secret=hiera('vcscheck/notify_secret',"")
     $curlopt=hiera('vcscheck/curlopt','')
-    file {"/etc/vcscheck/${type}_${name}.rc":
-        content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\nCURLOPT=${curlopt}\n"
+    $cfgfile = "/etc/vcscheck/${type}_${name}.rc"
+    file {
+        $cfgfile:
+            content=>"## Managed by Puppet ##\n# vcscheck::cfg ${name} ${type}\nMAILTO=${mailto}\nNOTIFYURL=${notify_url}\nNOTIFYSECRET=${notify_secret}\nTYPE=${type}\nDIR=${dir}\nSOURCE=${source}\nCREATE=${create}\nAUTOUPDATE=${autoupdate}\nCURLOPT=${curlopt}\n"
     }
     if $create==true {
         ## use the vcscheck script to checkout
@@ -44,7 +46,7 @@ define vcscheck::cfg ($type,$dir,$source,$create,$autoupdate) {
             "vcscheck_${name}_create":
                 command =>"/usr/local/bin/vcscheck --create --nomail ${cfgfile}",
                 unless  => "/usr/bin/test -d $dir/.$type",
-                require =>File["/etc/vcscheck/${type}_${name}.rc"];
+                require =>File[$cfgfile];
         }
     }
 }
