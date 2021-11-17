@@ -177,7 +177,7 @@ function git_update() {
         local out=$(git pull --ff-only 2>&1 )
         R=${PIPESTATUS[0]}
         #echo "$out"
-        if [ $R -ne 0 -o "$out" != "Already up-to-date." ]; then
+        if [ $R -ne 0 -o "$out" != "Already up-to-date." ] && [ $R -ne 0 -o "$out" != "Already up to date." ]; then
             echo "## $CONF: updated $VCS_DIR res=$R"
             echo "$out"
         fi
