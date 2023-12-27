@@ -44,6 +44,10 @@ SYSADMINS="root" # not @localhost, ssmtp does not remap it nicely
 REPLYTO=$SYSADMINS
 export SVN_SSH="ssh -q -o StrictHostKeyChecking=no"
 export GIT_SSH="$MYDIR/vcsssh"
+## USER/HOME env needed for git 2.34 to find ~.gitconfig
+## Using ~nagios/.gitconfig lets you avoid unsafe owner complaints without touching the system-wide git config
+export USER=${USER:-$(id -un)}
+export HOME=${HOME:-$(getent passwd $USER | cut -f6 -d:)}
 
 ## Set defaults
 DO_REMOTE=true
